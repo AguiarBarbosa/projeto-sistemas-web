@@ -25,7 +25,7 @@ function Right() {
 }
 function Card() {
   return (
-    <div className="grid grid-cols-6 bg-white text-black w-full">
+    <div className="grid grid-cols-6 bg-white text-black w-full rounded-2xl">
       <Left />
       <Right />
     </div>
