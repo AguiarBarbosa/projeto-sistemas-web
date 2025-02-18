@@ -2,7 +2,7 @@ import React from "react";
 
 interface ButtonProps {
   children: React.ReactNode;
-  onClick?: () => void; 
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void; // Aceita o evento de clique
 }
 
 export const ButtonCommon: React.FC<ButtonProps> = ({ children, onClick }) => {

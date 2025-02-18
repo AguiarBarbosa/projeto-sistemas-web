@@ -11,8 +11,8 @@ function Left() {
     );
   }
   return (
-    <div className="divide-y-2 divide-dashed divide-slate-400 p-2 col-span-5">
-      <Label span="De" label="Cidade A" />
+    <div className="divide-y-2 divide-dashed divide-slate-400 p-2 col-span-5 truncate">
+      <Label span="De" label="Cidade A"/>
       <Label span="Para" label="Cidade B" />
     </div>
   );

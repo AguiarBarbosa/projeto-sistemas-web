@@ -17,7 +17,7 @@ export const Turma: React.FC = () => {
       <div className="m-4">
         <CardRoute />
       </div>
-      <div className="justify-center flex mb-4">
+      <div className="justify-center flex mb-2">
         <ButtonCommon onClick={handleTurma}>Iniciar Rota</ButtonCommon>
       </div>
       <div className="mx-4 mb-4 p-2 overflow-y-auto">
