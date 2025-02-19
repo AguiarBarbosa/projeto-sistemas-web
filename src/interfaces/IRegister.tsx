@@ -6,7 +6,4 @@ export interface IRegister {
     confirmPassword: string;
     cpf: string;
     phone: string;
-    address: string;
-    city: string;
-    state: string;
 }
