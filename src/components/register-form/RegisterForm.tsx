@@ -2,19 +2,12 @@ import { useState } from 'react';
 import { IRegister } from '../../interfaces/IRegister';
 import { ButtonCommon } from '../../components/button';
 import { toast, ToastContainer } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 export const RegisterForm = () => {
   const [passwordVisibility, setPasswordVisibility] = useState<boolean>(false);
-
-  const togglePasswordVisibility = () => {
-    setPasswordVisibility(!passwordVisibility);
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value })); 
-  };
-
+  const [error, setError] = useState('');
+  const [cpf, setCpf] = useState('');
   const [formData, setFormData] = useState<IRegister>({
     name: '',
     lastname: '',
@@ -24,9 +17,35 @@ export const RegisterForm = () => {
     cpf: '',
     phone: '',
   });
+  const navigate = useNavigate();
 
-  const [error, setError] = useState('');
+  const togglePasswordVisibility = () => {
+    setPasswordVisibility(!passwordVisibility);
+  };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const formatCPF = (value: string) => {
+    value = value.replace(/\D/g, '').slice(0, 11);
+
+    if (value.length > 9) {
+      return value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (value.length > 6) {
+      return value.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    } else if (value.length > 3) {
+      return value.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    }
+    return value;
+  };
+
+  const handleCPFChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedCpf = formatCPF(event.target.value);
+    setCpf(formattedCpf);
+    setFormData((prev) => ({ ...prev, cpf: formattedCpf }));
+  };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -52,60 +71,56 @@ export const RegisterForm = () => {
     }
   };
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('As senhas não coincidem', {
+    if (Object.values(formData).some((value) => !value)) {
+      toast.error('Todos os campos são obrigatórios', {
         position: 'top-right',
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: 'light',
+        autoClose: 3000,
       });
       return;
     }
 
-    if (formData.password === '') {
-      toast.error('A senha não pode estar vazia', {
+    if (!validateEmail(formData.email)) {
+      toast.error('E-mail inválido.', {
         position: 'top-right',
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: 'light',
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('As senhas não coincidem', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    if (formData.cpf.length < 11) {
+      toast.error('CPF inválido', { position: 'top-right', autoClose: 3000 });
+      return;
+    }
+
+    if (formData.phone.length < 16) {
+      toast.error('Telefone inválido', {
+        position: 'top-right',
+        autoClose: 3000,
       });
       return;
     }
 
     console.log('Dados enviados:', formData);
-  };
-  const [cpf, setCpf] = useState('');
-
-  const formatCPF = (value: string) => {
-    value = value.replace(/\D/g, '').slice(0, 11);
-
-    if (value.length > 9) {
-      return value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    } else if (value.length > 6) {
-      return value.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-    } else if (value.length > 3) {
-      return value.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-    }
-    return value;
+    navigate('/turma');
   };
 
-  const handleCPFChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedCpf = formatCPF(event.target.value);
-    setCpf(formattedCpf);
-    setFormData((prev) => ({ ...prev, cpf: formattedCpf })); 
-  };
   return (
     <div className="w-screen mx-auto  p-6 h-screen flex flex-col justify-between">
       <div>
@@ -134,7 +149,7 @@ export const RegisterForm = () => {
                 placeholder="Nome"
                 value={formData.name}
                 onChange={handleChange}
-                className="p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50"
+                className={`p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 ${formData.name ? 'bg-green-50 border-greenpersonal' : ''}`}
                 required
               />
             </div>
@@ -145,7 +160,7 @@ export const RegisterForm = () => {
               placeholder="Sobrenome"
               value={formData.lastname}
               onChange={handleChange}
-              className="p-2 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50"
+              className={`p-2 border rounded-lg w-full focus:outline-none focus:outline-greenpersonal focus:bg-green-50 ${formData.lastname ? 'bg-green-50' : ''}`}
               required
             />
           </div>
@@ -170,7 +185,8 @@ export const RegisterForm = () => {
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
-              className="p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50"
+              className={`p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 ${formData.email ? 'bg-green-50 border-greenpersonal' : ''}`}
+             
               required
             />
           </div>
@@ -188,33 +204,59 @@ export const RegisterForm = () => {
                 clipRule="evenodd"
               />
             </svg>
+
             <input
               type={passwordVisibility ? 'text' : 'password'}
               name="password"
               placeholder="Senha"
               value={formData.password}
               onChange={handlePasswordChange}
-              className="p-2 pl-10 pr-12 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 overflow-hidden text-ellipsis"
+              className={`p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 ${formData.password ? 'bg-green-50 border-greenpersonal' : ''}`}
+
               required
             />
-            
+            {passwordVisibility ? (
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 onClick={togglePasswordVisibility}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
-                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
                 stroke="currentColor"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
                 width="20"
                 height="20"
               >
-                <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
                 <path
-                  fillRule="evenodd"
-                  d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-                  clipRule="evenodd"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"
                 />
               </svg>
-            
+            ) : (
+              <svg
+                onClick={togglePasswordVisibility}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+                width="20"
+                height="20"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                />
+              </svg>
+            )}
           </div>
           <div className="relative w-full">
             <svg
@@ -232,29 +274,56 @@ export const RegisterForm = () => {
             <input
               type={passwordVisibility ? 'text' : 'password'}
               name="confirmPassword"
-              placeholder="Confirmar"
+              placeholder="Confirmar Senha"
               value={formData.confirmPassword}
               onChange={handlePasswordChange}
-              className="p-2 pl-10 pr-12 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 overflow-hidden text-ellipsis"
+              className={`p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 ${formData.confirmPassword ? 'bg-green-50 border-greenpersonal' : ''}`}
+
               required
             />
 
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              onClick={togglePasswordVisibility}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
-              viewBox="0 0 20 20"
-              stroke="currentColor"
-              width="20"
-              height="20"
-            >
-              <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-              <path
-                fillRule="evenodd"
-                d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-                clipRule="evenodd"
-              />
-            </svg>
+            {passwordVisibility ? (
+              <svg
+                onClick={togglePasswordVisibility}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+                width="20"
+                height="20"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"
+                />
+              </svg>
+            ) : (
+              <svg
+                onClick={togglePasswordVisibility}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+                width="20"
+                height="20"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                />
+              </svg>
+            )}
           </div>
 
           <div className="relative w-full">
@@ -277,7 +346,8 @@ export const RegisterForm = () => {
               placeholder="CPF"
               value={cpf}
               onChange={handleCPFChange}
-              className="p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50"
+              className={`p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 ${formData.cpf ? 'bg-green-50 border-greenpersonal' : ''}`}
+
               required
             />
           </div>
@@ -301,7 +371,8 @@ export const RegisterForm = () => {
               placeholder="Telefone"
               value={formData.phone}
               onChange={handleChange}
-              className="p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50"
+              className={`p-2 pl-10 border rounded-lg w-full focus:outline-greenpersonal focus:bg-green-50 ${formData.phone ? 'bg-green-50 border-greenpersonal' : ''}`}
+
               required
             />
           </div>
